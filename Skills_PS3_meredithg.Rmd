@@ -1,0 +1,664 @@
+---
+title: "Skills PS 3"
+author: "Meredith Gavin"
+date: "4/23/2022"
+output:
+  html_document:
+    number_sections: yes
+  pdf_document: default
+---
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lintr)
+library(styler)
+```
+
+<!-- .Rmd files use  markdown, a text mark up language, to provide formating.--> 
+<!--Text include within these strange arrows are comments and will not show up when you knit-->
+
+# 1: FRONT MATTER
+**Front matter**
+This submission is my work alone and complies with the 30535 integrity policy.
+
+Add your initials to indicate your agreement: **MG**
+
+Add your collaborators: **__**
+
+Late coins used this pset: 0. Late coins left: 5. 
+<!--Please update. You may use up to two for a given assignment. Note we added 5 late coins for a total of 9 for the quarter.)-->
+
+# 2: EDA: EXPLORING VARIATION
+
+## 2.1
+
+
+```{r}
+diamonds <- diamonds
+
+head(diamonds)
+
+diamonds$price_by_thousands <- diamonds$price/1000
+```
+
+```{r}
+
+ggplot(data = diamonds) +
+  geom_freqpoly(aes(x = price_by_thousands),
+                binwidth = 0.05) +
+  labs(title = "Distribution of Diamond Prices",
+       x = "Price (in Thousands of Dollars)",
+       y = "Number of Observations")
+```
+### 2.1.a
+
+The distribution of diamond prices is right skewed. The largest number of 
+observations occurs in the lower thousands of dollars. As price increases, for
+the most par, observations decrease. This is unsurprising as most people likely
+can't afford to spend tens of thousands of dollars on diamonds. 
+
+### 2.1.b
+
+It makes sense that the price of diamonds peaks in the lower thousands of 
+dollars and then trails off. There is a larger market for less expensive
+diamonds than for diamonds in the $5000 to $15000+ range. However, I was 
+surprised by the significant dip at the ~ $ 1500 mark. The distribution
+peaks in the low $1000s and then steadily decreases as price increases, but the 
+sudden drop around $1500 drop is unexpected and unexplained. 
+
+## 2.2
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_freqpoly(aes(x = carat),
+                binwidth = 0.001) +
+  labs(title = "Distribution of Diamond Carats",
+       x = "Carat",
+       y = "Number of Observations") +
+  xlim(0,3)
+```
+
+
+### 2.2.a
+
+The overall distribution of diamond carats is right skewed. The largest number 
+of observations are seen around 0.25 carats and the observations taper off as
+the carats increase. This tracks with the price distribution. Diamonds with
+more carats are likely rarer and more expensive with a smaller market of 
+people willing and able to purchase. Unlike the price distribution, there are
+very clear stopping points. It appears that diamonds may be cut at specific 
+points such that there is a peak at 1, a peak at 1,25, a peak at 1.5 and so forth. 
+
+### 2.2.b
+
+```{r}
+diamonds %>%
+  filter(carat == 0.99) %>%
+  nrow()
+
+diamonds %>%
+  filter(carat == 1) %>%
+  nrow()
+```
+
+There are 23 diamonds in the dataset with 0.99 carat. There are 1,558 diamonds
+with 1 carat. This information aligns with the distribution plot of diamonds
+by carat. It seems likely that diamonds are cut to be as close to a specific 
+number as possible. Hence, instead of aiming for a 0.99 carat diamond, jewelers
+may aim for 0.5 carat or 1 carat. 
+
+## 2.3
+
+Using coord_cartesian: 
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(aes(carat)) +
+  coord_cartesian(xlim = c(1,1.5))
+```
+
+
+Using xlim() and ylim()
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(aes(carat)) +
+  xlim(1,1.5)
+```
+
+
+Using ylim():
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(aes(carat)) + 
+  ylim(0, 10)
+```
+
+If we leave binwidth at its default and keep zooming in, we will eventually not
+see any useful information. The plot will adjust to see values at the zoomed in
+scale, but we will be missing the distribution at large. 
+
+# 3 EDA: Navigating NAs
+
+## 3.1
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(aes(x = price)) +
+  labs("Distribution of Diaond Prices",
+       x = "Price")
+```
+
+
+```{r}
+diamonds %>% 
+  filter(cut == "NA")
+```
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(x = color)) +
+  geom_bar() +
+  labs(title = "Diamonds by Color Category",
+       x = "Color")
+```
+
+We aren't missing any values in this dataset, but if we were, the histogram 
+would be unaffected. It would simply ignore the missing values. If there were
+"NA" values for diamond colors, the bar chart would show a bar specifically for 
+those values. For example, if there were 3000 missing values for color all coded
+"NA," we would get an eighth bar similar in height to the current "J" bar. 
+
+## 3.2
+
+```{r}
+mean(
+  diamonds$price, 
+     na.rm = TRUE
+     )
+
+sum(
+  diamonds$price,
+    na.rm = TRUE
+    )
+```
+
+na.rm = TRUE tells mean() or sum() to skip over any NA values when calculating 
+the mean or the sum of the observations. Without it, if there are "NA" values, 
+r would return a value of NA for the mean or sum. If we used na.rm = FALSE, the 
+function would not ignore the "NA" values, and we would again get a result of 
+NA. 
+
+Resource: https://www.programmingr.com/tutorial/na-rm/
+
+
+# 4: DIAMONDS
+
+## 4.1.
+
+```{r}
+diamonds %>%
+  group_by(cut) %>%
+  summarise(avg_price = mean(price),
+            n_cut = n())
+```
+
+```{r}
+diamonds_avg_price <- diamonds %>%
+  group_by(cut, carat) %>%
+  summarise(n = n(),
+            avg_price = mean(price))
+```
+
+### 4.1.a
+
+Which variable is most important for predicting price of a diamond?
+
+```{r}
+
+ggplot(data = diamonds,
+       mapping = aes(x = price,
+                     y = carat)) +
+  geom_point(alpha = 0.1) +
+  geom_smooth()
+```
+
+The carats of the diamond are very important for predicting price. There is a 
+positive, linear relationship between price and carat. 
+
+### 4.1.b
+
+How is carat correlated with cut?
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(x = carat, 
+                     fill = cut)) +
+  geom_histogram(bins = 10, 
+                 position = "dodge") + 
+  coord_cartesian(xlim = c(0, 2.5)) +
+  labs(x = "Carat",
+       y = "Number of Observations",
+       title = "Diamonds by Carat and Cut",
+       fill = "Cut")
+```
+
+There appears to be a negative relationship between carat and cut. The lower 
+carat, the higher the rate of an "Ideal" cut. As carat increases, the likelihood
+of the cut being "Ideal" decreases. 
+
+### 4.1.c
+
+The table is misleading because the diamonds with an "Ideal" cut are most often
+also the diamonds with the fewest carats. Since price is highly dependent on
+carat count, the it makes sense that the chart interpreted the lowest average
+cost with the "Ideal" cut. It would make more sense to include carats in this 
+table to show the full story. 
+
+
+## 4.2
+
+```{r}
+diamonds %>% 
+  count(color, cut) %>%  
+  ggplot(mapping = aes(x = color, y = cut)) +
+    geom_tile(mapping = aes(fill = n))
+```
+### 4.2.a
+
+The "Ideal" cut is most common in each color category. 
+
+### 4.2.b
+
+```{r}
+diamonds %>% 
+  count(cut, color) %>%  
+  ggplot(mapping = aes(x = cut, y = color)) +
+    geom_tile(mapping = aes(fill = n))
+```
+
+```{r}
+diamonds_by_cut <-
+  diamonds %>%
+  group_by(cut, color) %>%
+  summarise(n_observations = n())
+
+head(diamonds_by_cut)
+
+ggplot(data = diamonds_by_cut,
+       mapping = aes(
+         x = cut,
+         fill = color,
+         y = n_observations)) +
+  geom_col() +
+  labs(x = "Cut",
+       y = "Number of Observations",
+       fill = "Color",
+       title = "Diamond Distribution of Color within Cuts") +
+
+```
+
+
+### 4.2.c
+
+Reproduce the graph
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(
+        x = color, 
+        y = ..prop.., 
+        group = 1
+       )) +
+  geom_bar() +
+  facet_wrap(vars(cut)) 
+```
+## 4.3
+
+### 4.3.a
+
+```{r}
+# plot using cut_width()
+ggplot(data = diamonds,
+       mapping = aes(x = price)) +
+  geom_freqpoly(mapping = aes(color = cut_width(carat, 0.5))) +
+  labs(title = "Distribution of Diamonds by Price and Carat",
+       x = "Price",
+       color = "Carat")
+
+# plot using cut_number()
+ggplot(data = diamonds,
+       mapping = 
+         aes(x = price)) +
+  geom_freqpoly(mapping = 
+                  aes(color = cut_number(carat, n = 10))) 
+```
+
+### 4.3.b
+
+The benefits of cut_width() in this situation are that, if there is a specific
+threshold by which diamonds are cut (i.e. by 0.5 or 0.25 carats), we can
+represent that using this function. However, if the threshold were very small, 
+it would create a scenario in which we have too many lines/colors to actually 
+make sense of. 
+
+Cut_number() allows us to define the number of groups we have, and then breaks
+the continuous variable into groups of equal binwidths. The benefit, from a 
+visual perspective, is that we can choose the number of groups that would be 
+easiest/most valuable to read on a graph. 
+
+## 4.4
+
+Distribution of diamond carats by price
+
+```{r}
+ggplot(data = diamonds,
+       mapping = 
+         aes(x = carat)) +
+  geom_freqpoly(mapping = 
+                  aes(color = cut_number(price, n = 5, dig.lab = 10))) +
+  # Resource: https://stackoverflow.com/questions/15497694/cut-function-in-r-labeling-without-scientific-notations-for-use-in-ggplot2
+  xlim(0, 3) +
+  labs(title = "Distribution of Diamonds by Carat and Price",
+       x = "Carat",
+       color = "Price")
+```
+
+
+## 4.5
+
+The distirbution of the most expensive category of diamonds is very inconsistent
+in terms of carats. For each of the other four price bins, there is a clear 
+peak on the distribution. The least expensive group is most common around 0.25 
+carat diamonds. The second price group peaks around 05. carat diamonds. The 
+third group peaks around 0.75 carat, and the fourth group peaks around 1 carat.
+The most expensive group is spread fairly evenly from 1 to 2 carats. This is not
+necessarily surprising because there are fewer larger diamonds and the most
+expensive grouping is a wide range of prices. Up to 1 carat, pricing appears to 
+be more consistent and standardized, whereas larger diamonds vary greatly. 
+
+## 4.6
+
+Plot cut, carat, and price. 
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(
+         x = carat,
+         y = price,
+         color = cut)) +
+  geom_point(alpha = 0.25) +
+  facet_wrap(vars(cut)) +
+  labs(title = "Diamond Prices and Carats by Cut",
+       x = "Carat",
+       y = "Price",
+       color = "Cut")
+```
+
+
+## 4.7
+
+```{r}
+ ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = x, y = y)) +
+  coord_cartesian(xlim = c(4, 11), ylim = c(4, 11))
+
+ggplot(data = diamonds) +
+  geom_bin2d(mapping = aes(x = x, y = y)) +
+  coord_cartesian(xlim = c(4, 11), ylim = c(4, 11))
+```
+
+Geom_bin2d() shows outliers in the x = 5, y = 7 region that are less obvious in 
+the geom_point() plot. There is a also a clear, very large group of observations
+around the x = 4.5, y = 5 block. The color scheme indicates that there is an 
+unusually high concentration of points in that area. Because there is no color 
+scheme in the geom_point() plot we cannot see the concentration of points
+there. 
+
+```{r}
+diamonds_by_color <- diamonds %>%
+  group_by(color, cut) %>%
+  summarise(n = n())
+```
+
+```{r}
+ggplot(data = diamonds,
+      aes(x = color,
+       fill = cut)) +
+  geom_bar()
+```
+
+# 5: FLIGHTS
+
+## 5.1
+
+geom_bin2d() and geom_hex() and geom_boxplot
+
+Load the data:
+
+```{r}
+flights <- nycflights13::flights
+```
+
+Plot using geom_bin2d()
+
+```{r}
+
+ggplot(data = flights) +
+  geom_bin2d(mapping = aes(x = dep_time,
+                           y = dep_delay)) +
+  labs(x = "Departure Time",
+       y = "Departure Delay",
+       title = "Flights by Departure Time and Delay")
+```
+
+
+
+Plot using geom_hex()
+
+```{r}
+ggplot(data = flights) +
+  geom_hex(mapping = aes(x = dep_time,
+                           y = dep_delay)) +
+  labs(x = "Departure Time",
+       y = "Departure Delay",
+       title = "Flights by Departure Time and Delay")
+```
+
+
+Plot using geom_boxplot()
+
+
+```{r}
+ggplot(data = flights,
+       mapping = aes(
+         y = dep_time,
+         x = dep_delay
+       )) +
+  geom_boxplot(aes(group = cut_width(dep_delay, 100))) +
+  labs(title = "Flights by Departure Times and Delays",
+       x = "Departure Delay",
+       y = "Departure Time")
+```
+
+
+
+# 6: R4DS CHAPTERS 10 AND 11
+
+## 6.1
+
+Consider the dataframe:
+
+```{r}
+d_f <- data.frame(abc = 1, xyz = "a")
+d_f$x
+d_f[, "xyz"]
+d_f[, c("abc", "xyz")]
+```
+
+Recreate the dataframe using tibble()
+
+```{r}
+d_f_2 <- tibble(abc = 1,
+                xyz = "a"
+  )
+
+d_f_2
+```
+
+The two tables are the same in content. There are two columns ("abc" and "xyz"),
+and one row. The are both saved to the global environment in R Studio, however,
+they are saved as different "types." The table created using data.frame() is 
+type "data.frame," and the table created by tibble() is type "tbl_df." The
+actual code need to create the tibble is more straightforward than the code 
+needed for data.frame. Data.frame also automatically prints the entire dataframe
+whereas, by default, tibble only prints the first ten rows. While this isn't 
+an important factor in these examples, it could be irritating when working with
+larger data sets. Data.frame also requires slightly different code for 
+subsetting data when using a pipe, which could be cumbersome. However, there 
+are scenarios in which data.frame() is preferable. Certain older functions 
+don't work in tibble() and in those instances, it makes more sense to use 
+data.frame().
+
+
+## 6.2
+
+
+
+## 6.3
+
+Identify what is wrong with each of the following read_csv codes:
+
+1. read_csv("a,b\n1,2,3\n4,5,6")
+
+    There are too many observations per column such that "2, 3" is giving the 
+    output "23" and "5, 6" is giving the output "56."
+
+2. read_csv("a,b,c\n1,2\n1,2,3,4")
+
+    The second "\n" appears too early in the list. It needs to be placed 
+    after the second "1" to move to the second row at the correct point. 
+
+3. read_csv("a,b\n\"1")
+
+    The entire csv file needs to by in quotations. There is an extra quotation
+    before 1, which will cause an error. There is also an extra "\" after n. 
+    
+4. read_csv("a,b\n1,2\na,b")
+    
+    "a" and "b" are listed as both the column headers and as individual 
+    observations. 
+    
+5. read_csv("a;b\n1;3")
+    We shouldn't use semicolons for read_csv(). It would make more sense to 
+    use read_csv2() where the input is delimited by semicolons. 
+
+## 6.4
+
+For locale(), date_format() allows us to format the date structure to the 
+region we are working with (i.e. %m/%d/%y for the US and %d/%m/%y for the UK), 
+and time_format allows us to do the same but for time formats. If working with
+data from Latin America, our code may look like this:
+
+```{r}
+# Adjusting the example from ?locale()
+str(parse_guess("01/31/2013"))
+#>  chr "01/31/2013"
+str(parse_guess("01/31/2013", 
+                locale = locale(date_format = "%m-%d-%Y")))
+#>  Date[1:1], format: "01-31-2013"
+```
+
+
+## 6.5
+
+
+```{r}
+d1 <- "January 1, 2010"
+parse_date(
+  d1,
+  format = "%B %d, %Y"
+)
+d1
+d2 <- "2015-Mar-07"
+parse_date(
+  d2,
+  format = "%Y-%b-%d"
+)
+d2
+d3 <- "06-Jun-2016"
+parse_date(
+  d3,
+  format = "%d-%b-%Y"
+)
+d3
+d4 <- c("August 19 (2015)", "July 1 (2015)") 
+parse_date(
+  d4,
+  format = "%B %d (%Y)"
+)
+d4
+d5 <- "12/30/14" # Dec 30, 2014
+parse_date(
+  d5,
+  format = "%m/%d/%y"
+)
+d5
+t1 <- "1805" # 6:05 pm 
+parse_time(
+  t1,
+  format = "%H%M"
+)
+t1
+t2 <- "11:25:10.12 PM"
+parse_time(
+  t2,
+  format = "%I:%M:%OS %p"
+)
+t2
+
+```
+
+## 6.6
+
+```{r}
+massey_rating <- readr_example("massey-rating.txt")
+
+fwf_empty(massey_rating)
+```
+
+
+The output supplies us with the begining, end, and column headers of a tibble 
+based on the positions of variables in the massey-rating.txt file. This allows 
+us to identify where likely NA values are instead of shifting column headers 
+or incorrect values into another line. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
