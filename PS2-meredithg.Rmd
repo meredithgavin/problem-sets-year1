@@ -1,0 +1,562 @@
+---
+title: "Problem Set 2 - Data and Programming for R"
+author: "Meredith Gavin"
+date: "29/03/2020"
+output:
+  pdf_document: default
+  html_document:
+    number_sections: yes
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+<!-- .Rmd files use  markdown, a text mark up language, to provide formating.--> 
+<!--Text include within these strange arrows are comments and will not show up when you knit-->
+
+# Front matter
+This submission is my work alone and complies with the 30535 integrity policy.
+
+Add your initials to indicate your agreement: **MG**
+
+Add your collaborators: **__**
+
+Late coins used this pset: 0. Late coins left: 5 
+<!--You may use up to two for a given assignment.)-->
+
+# Problems
+## You change section heading goes here 
+<!--(Notice the use of two `##`)-->
+
+1. YOUR TEXT ANSWER GOES HERE (Please delete)
+
+
+# 2 GIT CONCEPTS
+
+## 1
+4 benefits of distributed version control:
+
+-collaborators can work together on an R project without overlapping or accidentally deleting each other's code
+-it tracks changes to code, so that you can better follow edits made to your code
+-Organization is a concurrent part of the system, as opposed to its own separate task
+-committing your code makes it less likely to be lost or corrupted
+
+Resource: https://peerj.com/preprints/3159v2/
+
+## 2
+### i
+
+The remote repository for this project is datasci-harris/skills-problem-set-2-meredithgavin
+
+### ii
+
+To add a file to staging in github, clone it from the remote repository and then open in an editor. 
+
+### iii
+
+To commit an issue to the local repository, run git commit or (if its linked with something like R Studio) save the file and changes will show up in github desktop. 
+
+### iv 
+
+github desktop show the most recently saved changes to the code which have not yet been committed to the remote repository.
+
+### v
+
+I am on the "main" branch because I am wroking individually on this problem set. 
+
+### vi
+
+#### a
+
+Once you create a new branch, you can begin working on that branch in the working directory.
+
+#### b
+
+The new branch will not be available in the remote repository until it is committed and pushed to the remote repository from github desktop. 
+
+#### c
+
+We may want to start a new branch to separate our work from a partner's work before its committed to the main branch.
+
+
+# 3.1: PRACTICING WITH DPLYR VERBS
+
+## 1
+
+```{r}
+my_variable <- 10
+my_variable
+```
+
+
+## 2
+```{r}
+library(tidyverse)
+ggplot(mpg, mapping = aes(x=displ, y=hwy)) + geom_point()
+filter(mpg, cyl == 8)
+filter(diamonds, carat > 3)
+```
+
+
+## 3
+
+The Keyboard Shortcut Quick Reference pops up. You can also find the guide by going to Tools -> Keyboard Shortcut Help. 
+
+# 3.2  TRANSFORMATIONS: FILTER ROWS WITH FILTER ()
+
+## 1
+
+```{r}
+library(nycflights13)
+flights <- nycflights13::flights
+head(print(flights))
+```
+
+### i
+
+```{r}
+
+head(filter(flights, arr_delay >= 3))
+```
+### ii
+
+```{r}
+head(filter(flights, dest == "IAH" | dest == "HOU"))
+```
+### iii
+```{r}
+head(filter(flights, carrier == "UA" | carrier == "AA" | carrier == "SW"))
+```
+### iv
+
+```{r}
+head(filter(flights, month ==3  | month == 4 | month == 6 ))
+```
+
+### v
+
+```{r}
+head(filter(flights, dep_delay <= 0 & arr_delay >= 2))
+```
+
+### vi
+
+```{r}
+speedbonus <- flights$arr_delay - flights$dep_delay
+
+head(filter(flights, dep_delay >= 60 & speedbonus > 30))
+```
+
+### vii
+
+```{r}
+head(filter(flights, dep_time <= 500))
+```
+
+
+
+## 2
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes (x = displ, y = cty, color = drv, shape = drv)) + 
+  geom_smooth(data = mpg, mapping = aes(x = displ, y = cty), se=FALSE)
+
+filter(mpg, displ < 4 & displ > 3 & cty < 13)
+```
+
+The green triangle is a 2008 dodge caravan with two wheel drive. 
+
+
+### 1
+
+```{r}
+
+filter(flights, is.na(arr_time))
+
+
+```
+
+### 2
+
+```{r}
+flights %>%
+  filter(is.na(dep_time)) %>%
+  summarise(n=n())
+
+head(flights %>%
+       filter(is.na(dep_time)))
+```
+
+There are 8255 flights with missing departure times. Of these flights, there are
+also missing values for air_time, arr_delay, arr_time, and dep_delay. These rows represent information that can only be gathered for flights that departed. 
+
+### 3 
+
+NA|TRUE returns observations of values that are missing OR values that are true given the parameters. 
+
+### 4 
+
+FALSE & NA returns observations with values that are False AND NA. 
+
+# 3.3: TRANSFORMATIONS: SELECT COLUMNS WITH SELECT()
+
+## 1
+```{r}
+head(select(flights, month, day, year))
+```
+
+Selecting multiple variables will return the dataframe with only the selected variables' columns. 
+
+## 2    
+
+```{r}
+select(flights, contains("TIME", ignore.case = FALSE))
+
+# Source: https://stackoverflow.com/questions/54634124/dplyrend-with-and-case-sensitivity
+```
+
+
+
+## 3
+
+```{r}
+head(select(flights, dep_time, dep_delay, arr_time, arr_delay))
+
+new_df <- data.frame(flights$dep_time, flights$dep_delay, flights$arr_time, flights$arr_delay)
+head(new_df)
+  
+```
+
+
+# 3.4: TRANSFORMATIONS: SORT COLUMNS WITH ARRANGE()
+
+## 1
+
+```{r}
+arrange(flights, desc(arr_delay)) %>% 
+  head(1)
+```
+
+The most delayed flight by arrival time (the largest value of arr_delay) was flight N384HA from JFK to HNL. It arrive 1272 minutes late. 
+
+
+## 2
+
+```{r}
+arrange(flights, dep_delay) %>% 
+  select(tailnum, day, month, dep_delay) %>%
+         head(5)
+```
+
+
+## 3
+
+```{r}
+arrange(flights,! is.na(dep_delay), dep_delay)
+
+# Resource: https://stackoverflow.com/questions/25258817/how-to-have-nas-displayed-first-using-arrange
+```
+
+# 3.5: TRANSFORMATIONS: ADD NEW VARIABLES WITH MUTATE()
+
+## 1
+
+```{r}
+library(tidyr)
+flight_min <- flights %>% 
+ mutate(arr_time_min = (arr_time/100) *60) %>%
+  mutate(dep_time_min = (dep_time/100) *60)
+
+head(flight_min)
+```
+
+## 2
+
+```{r}
+ggplot(flight_min, mapping = aes(x=air_time, y= (arr_time_min - dep_time_min))) +
+  geom_point()
+```
+
+## 3
+
+### i
+```{r}
+flight_min %>%
+  mutate(difference = arr_time_min - dep_time_min) %>%
+  filter(!("air_time" == "difference")) %>%
+  head(5)
+```
+The data is indicating that none of the flights have the same air time as they have difference in arrival and departure time.
+
+### ii
+
+One reason for this may be the number of decimal points that R defaults to. The difference column defaults to a high level of specifity. As a result, R reads the two as always unequal.
+
+### iii
+
+NA values may interfere with the filter code. 
+
+### iv
+
+One of the values may be an integer while the other may be a character. 
+
+
+## 4
+
+```{r}
+flight_min <- flight_min %>%
+  mutate(arr_time_min = (as.integer(arr_time_min))) %>%
+  mutate(dep_time_min = (as.integer(dep_time_min))) %>% 
+  mutate(air_time = as.integer(air_time)) %>%
+  mutate(difference = (as.integer(arr_time_min-dep_time_min)))
+
+flight_min %>%
+  filter(!(air_time == difference))
+
+head(flight_min)
+
+ggplot(flight_min, mapping = aes(x=air_time, y= difference)) +
+  geom_point()
+```
+
+
+## 5
+
+Applying as.integer eliminated the extra decimals and normalized the type of vector across the compared variables. However, the code is returning no flights for which the air_time value and the difference value are not equal. 
+
+## 6
+
+```{r}
+arrange(flights, dep_delay) %>%
+  head(10)
+
+min_rank(flights$dep_delay) %>%
+  head(5)
+```
+
+One reason there may by more than 10 flights in the top ten is that some flights have equal delays. 
+
+# 3.6: TRANSFORMATIONS: SUMMARIZING GROUPED DATA
+
+
+## 1
+
+```{r}
+not_cancelled <- flights %>%
+  filter(! is.na(arr_time))
+
+head(not_cancelled)
+
+not_cancelled %>%
+  summarise(dest=n()) %>%
+  summarise()
+
+not_cancelled %>% count(tailnum, wt
+= distance) 
+
+not_cancelled %>%
+  group_by(tailnum) %>%
+  summarise(Freq = sum(distance))
+
+#Resource: https://www.statology.org/sum-by-group-in-r/
+```
+
+
+There are 328063	observations of dest in not_cancelled. 
+
+## 2
+
+
+```{r}
+flights_by_dest <- flights %>%
+  filter(origin=="LGA"|origin=="JFK") %>%
+  group_by(dest)
+
+mutate(flights_by_dest,
+       mean_arr_delay = (mean(arr_delay, na.rm=TRUE))) %>%
+  arrange(desc(mean_arr_delay)) %>%
+  head(5)
+```
+
+The destination with the highest average arrival delay from NYC is CAK.
+
+
+## 3
+
+```{r}
+flights %>%
+  group_by(hour) %>%
+  arrange(arr_delay) %>%
+  head(5)
+```
+
+The best hours of the day to leave to avoid arrival delays are 5pm and 7am.
+
+## 4
+
+```{r}
+flights_by_tailnum <- flights %>%
+  group_by(tailnum) %>%
+  mutate(total_delay = arr_delay + dep_delay)
+
+flights_by_tailnum %>%
+  arrange(desc(total_delay)) %>%
+  select(tailnum, total_delay)
+```
+N384HA has the longest total delays.
+
+
+## 5
+
+```{r}
+flights %>%
+  group_by(dest) %>%
+  summarise(n=n_distinct(carrier, na.rm = TRUE)) %>%
+  filter(n >= 3)
+
+#Resource: https://stackoverflow.com/questions/56999897/sum-of-unique-values-in-a-column
+```
+
+## 6
+
+```{r}
+not_cancelled %>%
+  group_by(carrier) %>%
+  summarise(dep_time = n())
+```
+
+## 7
+```{r}
+flights %>%
+  filter(origin=="LGA"|origin=="JFK") %>%
+  group_by(carrier) %>%
+  count(dest) %>%
+  filter(n == 1)
+  
+
+```
+5 carriers that originate in NYC only fly to one destination. 
+
+# 3.7: TRANSFORMATIONS: PRACTIVAL APPLICATION 
+
+## 1
+
+```{r}
+flights %>%
+  group_by(carrier) %>%
+  summarise(mean(arr_delay, na.rm=TRUE)) %>%
+  head(5)
+```
+
+
+### a
+
+```{r}
+flights %>%
+  group_by(carrier) %>%
+  summarise(median(arr_delay, na.rm=TRUE)) %>%
+  head(5)
+```
+
+
+
+### b
+
+One way to identify airlines with higher average arrival delays is to create a visual representation of the average delay by airline. 
+
+Another way is to find the total mean of arrival delays, filter for arrival delays above the mean and identify carriers who appear most often. 
+
+### c
+
+```{r}
+flights_delay <- flights %>% 
+  group_by(carrier) %>% 
+  summarise(me = mean(arr_delay,na.rm = TRUE))
+
+ggplot(flights_delay, mapping = aes(x = carrier, y = me)) + 
+  geom_bar(stat = "identity")
+
+#Resource: https://stackoverflow.com/questions/33096781/how-to-create-a-bar-plot-and-show-average-y-values
+
+```
+
+```{r}
+flights %>%
+  group_by(carrier) %>%
+  filter(arr_delay > mean(arr_delay, na.rm = TRUE)) %>%
+  head(5)
+  
+```
+
+
+# 3.8: TRANSFORMATIONS: GROUP OPERATIONS WITH MUTATE() AND FILTER() 
+
+## 1
+
+### a
+```{r}
+flights_priordelays <- flights %>% 
+  arrange(origin, dest, day, sched_dep_time) %>%
+  group_by(origin) %>%
+  mutate(prior_delay = lag(dep_delay))
+
+head(flights_priordelays)
+
+# Resource: https://dplyr.tidyverse.org/reference/lead-lag.html
+
+```
+
+### b
+
+```{r}
+flights_priordelays %>%
+  group_by(prior_delay) %>%
+  ggplot(mapping = aes(x=mean(dep_delay, na.rm= TRUE), y=prior_delay)) +
+  geom_point()
+```
+
+
+## 2
+
+### a
+
+```{r}
+flights %>%
+  group_by(dest) %>%
+  mutate(med = median(air_time, na.rm=TRUE)) %>%
+  ungroup() %>%
+  filter(air_time > med) %>%
+  mutate(diff_air_time = air_time - med) %>%
+  arrange(desc(diff_air_time)) %>%
+  head(5)
+
+```
+
+
+## 3
+
+```{r}
+flights %>%
+  group_by(tailnum) %>%
+  mutate(total_delay = cumsum(dep_delay >= 60), na.rm=TRUE) %>%
+  mutate(total_delayed_flights = sum(total_delay > 1)) %>%
+  head(5)
+```
+
+
+
+
+
+
+
+
