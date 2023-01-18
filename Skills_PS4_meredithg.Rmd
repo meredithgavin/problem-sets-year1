@@ -1,0 +1,737 @@
+---
+title: "Skills PS4"
+author: "Meredith Gavin"
+date: "4/30/2022"
+output:
+  pdf_document: default
+  html_document:
+    number_sections: yes
+---
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+
+```
+
+<!-- .Rmd files use  markdown, a text mark up language, to provide formating.--> 
+<!--Text include within these strange arrows are comments and will not show up when you knit-->
+
+**Front matter**
+This submission is my work alone and complies with the 30535 integrity policy.
+
+Add your initials to indicate your agreement: **MG**
+
+Add your collaborators: **__**
+
+Late coins used this pset: 1. Late coins left: 4. 
+
+
+# Problems
+## You change section heading goes here 
+<!--(Notice the use of two `##` followed by a space. )-->
+
+
+
+# 1: Tidy Data with pivot_longer() and pivot_wider()
+
+
+## 1.1 
+
+Load the tables: 
+
+```{r}
+library(tidyverse)
+
+?table1
+
+table1 <- table1
+head(table1)
+
+
+table2 <- table2
+head(table2)
+
+table4a <- table4a
+head(table4a)
+
+table4b <- table4b
+head(table4b)
+```
+
+Calculate the TB rates:
+
+Using table1:
+
+```{r}
+table1 %>% 
+  mutate(tb_rate = (cases/population)*10000)
+```
+
+Using table2:
+
+```{r}
+table2_with_rates <- table2 %>%
+  pivot_wider(
+    names_from = type,
+    values_from = count
+  ) %>%
+  mutate(tb_rate = (cases/population)*10000)
+
+head(table2_with_rates)
+```
+
+Using table4a and table4b:
+
+First, we needed to adjust the tables so that they could be compatible for a
+join. Once the tables are compatible, we can join table4a and table4b to
+create a table4. Table4 includes all the information we need to compute
+infection rates. 
+
+```{r}
+table4a_cleaned <- pivot_longer(table4a,
+             cols = `1999`:`2000`,
+             names_to = "year",
+             values_to = "cases"
+             )
+
+table4b_cleaned <- pivot_longer(table4b,
+             cols = `1999`:`2000`,
+             names_to = "year",
+             values_to = "population")
+
+table4 <- table4a_cleaned %>%
+  left_join(table4b_cleaned,
+            by = c("year", "country"))
+
+table4 %>%
+  mutate(tb_rate = (cases/population)*10000)
+```
+
+Table 1 was the easiest to work with because the table didn't need to be 
+adjusted at all in order to create the tuberculosis rate variable. Tables 4a
+and 4b were the most difficult to work with because neither had the full 
+information necessary. As a result, we had to adjust the tables to make them
+compatible and then join the two before creating the tuberculosis rate 
+variable. 
+
+
+## 1.2
+
+To recreate the plot from section 12.2 using table2 instead of table1, we
+can use table2_with_rates, which is is table2 with TB rates. From there, we
+can use the table to calculate the number of cases each year using count(). 
+Then we can use the code for plotting table1 to plot table2_with_rates. 
+
+```{r}
+head(table2_with_rates)
+
+table2_with_rates %>%
+  count(cases,
+        wt = year) %>%
+  ggplot(data = table2_with_rates, 
+         mapping = aes(year, cases)) + 
+  geom_line(aes(group = country), 
+            colour = "grey50") + 
+  geom_point(aes(colour = country))
+```
+
+
+
+## 1.3
+
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2016, 2016),
+  half  = c(   1,    2,     1,    2),
+  return = c(1.88, 0.59, 0.92, 0.17)
+) 
+
+stocks
+
+
+ stocks %>%
+  pivot_wider(names_from = year, 
+              values_from = return) %>%
+  pivot_longer(`2015`:`2016`,
+               names_to = "year", 
+               values_to = "return")
+```
+
+The "names_from =" and "values_from =" arguments do not need quotation marks
+because they are referring to the integer values for year and return. The
+"names_to =" and "values_to =" arguments need quotations because we want R
+to recognize them as header names, not integer values. 
+
+
+## 1.4
+
+
+```{r}
+library(reprex)
+
+reprex({
+  library(tidyverse)
+  table4a %>% pivot_longer(1999:2000, 
+                         names_to = "year", 
+                         values_to = "cases")})
+```
+
+
+Reprex Output: 
+
+library(tidyverse)
+table4a %>% pivot_longer(1999:2000, 
+                       names_to = "year", 
+                       values_to = "cases")
+ Error in `loc_validate()`:
+  Can't subset columns past the end.
+  Locations 1999 and 2000 don't exist.
+  There are only 3 columns.
+
+
+
+## 1.5
+
+The reprex output indicates that R is having difficulty identifying the
+column headers "1999" and "2000." As a result, the function cannot create a
+data table as requested. The code is identifying the years 1999 and 2000 as
+integers instead of as character values. We can fix this by writing the
+years in single quotation marks.
+
+```{r}
+table4a %>% pivot_longer(`1999`:`2000`, 
+                         names_to = "year", 
+                         values_to = "cases")
+```
+
+## 1.6
+
+```{r}
+people <- tribble(
+~name, ~key, ~value, 
+#-----------------|--------|------
+
+"Phillip Woods",    "age",      45,
+"Phillip Woods",    "height",   186,
+"Phillip Woods",    "age",      50,
+"Phillip Woods",    "height",   185,
+"Jessica Cordero",  "age",      37,
+"Jessica Cordero",  "height",   156
+)
+
+people %>%
+  mutate(unique_id = row_number()) %>%
+  pivot_wider(names_from = key,
+              values_from = value)
+```
+
+The original problem with the tribble is that we have four observations of
+the name "Phillip Woods" and 2 observations of each age and height. When we 
+pivot_wider(), R understands all 4 "Phillip Woods" as the same observation, 
+however that doesn't work because one person cannot have two heights and two
+ages. To fix this, we add a unique identifier column. This allows R to read 
+each name in the tribble as an individual observation. We could have
+multiple people with the same name, so we can't assume that any height or
+age is paired. R then fills in unknown observations with NA. 
+
+
+## 1.7
+
+```{r}
+preg <- tribble(
+  ~pregnant, ~male, ~female,
+  "yes", NA, 10,
+  "no", 20, 12
+)
+
+preg
+
+preg %>%
+  pivot_longer(male:female,
+               names_to = "sex",
+               values_to = "count") %>%
+  pivot_wider(names_from = pregnant,
+              values_from = count) %>%
+  rename(pregnant = yes,
+         not_pregnant = no)
+
+#Resource: https://www.datasciencemadesimple.com/rename-the-column-name-in-r-using-dplyr/
+```
+
+
+I used both pivot_longer() and pivot_wider(). Using pivot_longer(), I
+created a tibble where "pregnant" was still a column with two observations
+of yes and two observations of no (to correspond with two observations each
+of male and female). From there, I used pivot_wider() to create columns
+based on the values yes and no in the "pregnant" column. For ease of
+understanding, I renamed the "yes" column to pregnant and the "no" column to
+not_pregnant. The variables are now sex, pregnant, and not pregnant. 
+
+
+## 1.8
+
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>%
+  separate(x, c("one", "two", "three"),
+           extra = "merge")
+
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>%
+  separate(x, c("one", "two", "three"),
+           extra = "merge") 
+```
+
+There are three options for "extra =", warn, drop, and merge. If there are too 
+many values in the tibble, extra tells R what to do with it when separating the
+observations in columns. Warn, which is the default, tells R to warn us when 
+there is an extra value. Drop gets rid of extra values without warning. Merge
+adds the value into the table by creating a cell with more than one 
+observation. 
+
+Fill tells R what to do with a missing value when converting a tibble into a 
+table. In this case there is one less value in column two than in columns one
+and three. The default, fill = "warn", creates a warning when there is a 
+missing value. Right fills the empty spot with the observation to the right, 
+and left fills the empty value with the observation from the left. 
+
+
+## 1.9 
+
+```{r}
+who <- tidyr::who
+
+who %>%
+  select(country, iso2, iso3) %>%
+  group_by(country) %>%
+  distinct() %>%
+  filter(n() > 1)
+```
+
+By grouping isolating the country, iso2, and iso3 columns and then grouping
+by country, we create what should be a list of unique rows. Using filter(), we
+can check for any repeated rows. Because there are no repeated rows, we can 
+infer that country, iso2, and iso3 are individual country names and codes. 
+
+Also, the data is pulled from the World Health Organization (WHO). The 
+organization provides a data dictionary dataset which confirms that iso2 and 
+iso3 are both country identifiers. 
+
+
+
+# 2 Tidying Case Study
+
+Load the data from R4DS
+
+```{r}
+
+#The original dataset:
+
+who <- who
+head(who)
+
+#The tidied dataset:
+who_tidy <- who %>%
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  ) %>% 
+  mutate(
+    key = stringr::str_replace(key, "newrel", 
+                               "new_rel")
+  ) %>%
+  separate(key, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+
+head(who_tidy)
+```
+
+
+## 2.1 
+
+
+### 2.1.a
+
+The textbook sets values_drop_na = TRUE to get rid of NA values in the data.
+If we dropped that part of the code, the data would look like this:
+
+```{r}
+who_keep_na <- who %>%
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases"
+  ) %>% 
+  mutate(
+    key = stringr::str_replace(key, "newrel", "new_rel")
+  ) %>%
+  separate(key, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+
+head(who_keep_na)
+
+head(who_tidy)
+```
+
+
+We can use complete() to identify missing values:
+
+```{r}
+who_tidy %>%
+  nrow()
+who_tidy %>%
+  complete(country, year, sex, age) %>%
+  nrow()
+
+132653 - 76046
+```
+
+Using complete(), we completed the dataset with implicitly missing 
+observations. For example, we simply didn't have an observation of 
+Afghanistan's tuberculosis cases in 1987. Once we have that information, 
+we can count the total number of rows and compare it to the number of rows
+in who_tidy. In total, we have 5,6607 missing observations when compared
+with who_tidy in which NA values have been removed. 
+
+### 2.1.b 
+
+```{r}
+who_keep_na %>%
+  filter(is.na(country) | is.na(year))
+
+```
+
+
+The tidied who data with the NA values kept is not explicitly missing any
+country-year pairs. 
+
+## 2.2
+
+In the WHO case study, an NA refers to a value which they simply have no 
+data on. For example, if there is no information on tuberculosis cases in 
+Afghanistan in 1983, the cases would be coded as NA. Zero refers to an 
+observation of zero. If they do have data on tuberculosis in Afghanistan in
+1983, but there were no cases, then it would be coded as '0'. 
+
+## 2.3 
+
+```{r}
+
+#The tidied dataset removing the mutate() step:
+who_tidy_no_mutate <- who %>%
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  ) %>% 
+  separate(key, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+
+head(who_tidy_no_mutate)
+head(who_tidy)
+```
+
+The mutate() code tells R to replace the name "newrel" with "new_rel". When
+we don't do that, we get an error in which R identifies missing values in 
+2580 rows and replaces them with "NA". In reality, the values should 
+(mostly) be available, its just an issue of technical differences in the
+names. 
+
+
+## 2.4
+
+### 2.4.a
+
+The total number of cases (n_cases) by sex for each country-year pair:
+
+```{r}
+who_tidy_grouped <- 
+  who_tidy %>%
+  group_by(year, country, sex) %>%
+  summarise(n_cases = sum(cases, na.rm = TRUE))
+
+head(who_tidy_grouped)
+```
+
+### 2.4.b
+
+Raw values likely won't provide clear evidence because we would need to 
+individually compare case counts between men and women in each country over
+each year of observation. Some countries only have a small number of cases 
+each year, which is not enough to create solid evidence of significant 
+differences in the number of cases between men and women. We need a separate
+variable that allows us to compare differences across countries and years. 
+
+### 2.4.c
+
+The ratio of male to female patients with tuberculosis (m_to_f_ratio) for
+each country-year pair:
+
+```{r}
+who_tidy_ratios <-
+  who_tidy %>%
+  group_by(year, country, sex) %>%
+  summarise(n_cases = sum(cases, na.rm = TRUE)) %>%
+  pivot_wider(names_from = "sex", values_from = "n_cases") %>%
+  mutate(m_to_f_ratio = m/f, 
+         n_cases = f + m)
+
+head(who_tidy_ratios)
+```
+
+
+### 2.4.d
+
+Grouping the table only by year would likely skew the data. Some countries
+have very few cases while others have a very high number, certain countries
+may be hot spots in certain years at the same time that others are seeing a
+lull in case counts, and country cultures may impact the ratio. For example,
+in countries where women are more likely to be caring for the sick, they may
+see higher rates of women being diagnosed with tuberculosis. 
+
+### 2.4.e
+
+```{r}
+
+age_labels <- c(
+  '014' = "0-14",
+  '1524' = "15-24",
+  '2534' = "25-34",
+  '3544' = "35-44",
+  '4554' = "45-54",
+  '5564' = "55-64",
+  '65' = "65+"
+)
+
+head(who_tidy)
+
+who_tidy %>%
+  group_by(country, year, sex, age) %>%
+  summarise(n_cases = sum(cases, na.rm = TRUE)) %>%
+  group_by(country, year) %>%
+  mutate(total_cases = sum(n_cases)) %>%
+  ungroup() %>%
+  mutate(percent_by_sex = n_cases/total_cases) %>%
+  filter(total_cases > 1,
+         year >= 1997) %>%
+  ggplot(mapping = aes(y = year,
+                       x = percent_by_sex,
+                       color = sex)) +
+  geom_point(aes(alpha = 0.2)) +
+ facet_grid(age ~., labeller = as_labeller(age_labels)) +
+  #Resource: https://stackoverflow.com/questions/3472980/how-to-change-facet-labels
+  labs(y = "Year",
+       x = "Percentage of Cases",
+       color = "sex",
+       title = "Percentage of Tuberculosis Patients by Sex",
+       subtitle = "1997 to 2013",
+       tag = "Age") +
+  theme(plot.tag.position = c(.88, 0.5),
+        plot.tag = element_text(angle = -90))
+
+ # Resource: https://stackoverflow.com/questions/59632276/how-to-add-vertical-label-on-the-right-side-of-ggplot-graph
+
+```
+
+### 2.4.f
+
+The graph includes information on percentage of cases by sex each year,
+grouped by age. I filtered the data to include only observations where 
+cases are greater than 1, to eliminate scenarios in which percentage is
+100% one sex only because there is only on tuberculosis case. The plot 
+focuses only on cases 1997 onward, and it indicates a difference in the
+percentages of male and female cases. There is no clear grouping of 
+male and female patients in the 0 to 14 age bracket. This could be because 
+there is a relatively low number of cases in this age group. In the 25-34 
+and 35-44 age brackets, the percentage of male cases clearly outweigh the 
+percentage of female patients. By the time we reach the 65+ age bracket,
+the pattern is less defined, but it does appear that male patients still
+make up a larger proportion of total cases. It is less defined, however, 
+perhaps because there is a greater number of cases in elderly populations
+and/or because women tend to outlive men, so women make up a larger portion 
+of that age bracket to begin with. It was difficult to plot this data and to
+present it in a way that is representative of the data. In this scenario, I
+omitted country distinctions in the plot. There were simply too many
+countries to include in the plot while keeping the data understandable. It 
+would potentially make sense to plot country data individually or by region.
+
+
+# 3 Joins
+
+
+Load dataset "flights" and "airports":
+
+```{r}
+flights <- nycflights13::flights
+head(flights)
+flights %>% nrow()
+
+airports <- nycflights13::airports
+head(airports)
+airports %>% nrow()
+```
+
+
+## 3.1
+
+
+The following code calculates the average flight delays by destination: 
+
+
+```{r}
+avg_delays_by_dest <- flights %>%
+  group_by(dest) %>%
+  summarize(avg_delay = mean(arr_delay, na.rm = TRUE))
+
+head(avg_delays_by_dest)
+avg_delays_by_dest %>% nrow()
+```
+
+
+
+Join avg_delays_by_dest with airports:
+
+```{r}
+avg_delays_airports_join <-
+  avg_delays_by_dest %>%
+left_join(airports, 
+          c("dest" = "faa")) %>%
+  filter(dest != "HNL" & dest != "ANC") 
+
+head(avg_delays_airports_join)
+
+ggplot(data = avg_delays_airports_join,
+       mapping = aes(lon, lat)) +
+    borders("state") +
+    geom_point(aes(color = avg_delay)) +
+    coord_quickmap() +
+  scale_color_gradient2(low = "green", 
+                        mid = "light blue", 
+                        high = "purple",
+                        breaks = c(-20, -10, 0, 10, 20, 30, 40)) +
+  labs(title = "Average Flight Delays by Destination",
+       subtitle = "United States, 2013",
+       x = "longitude",
+       y = "latitude",
+       color = "Average Delay (min)")
+    
+```
+
+
+## 3.2
+
+```{r}
+
+head(flights)
+
+head(airports)
+
+flights_airports_lat_lon <- flights %>%
+  left_join(airports,  c("dest" = "faa")) %>%
+  left_join(airports, c("origin" = "faa")) %>%
+  rename(lat.dest = lat.x,
+         lon.dest = lon.x,
+         lat.origin = lat.y,
+         lon.origin = lon.y)
+
+head(flights_airports_lat_lon)
+```
+
+
+
+## 3.3
+
+
+```{r}
+flights_airports_lat_lon  %>% 
+  group_by(tailnum) %>%
+  summarise(n_carriers = n_distinct(carrier)) %>%
+  filter(n_carriers > 1) %>%
+  nrow()
+```
+
+There are 11 planes (identified by tailnumber) that are flown by more than
+one carrier. There are seven instances with missing tailnumbers. It is
+possible that those missing values would be included in this count.
+
+## 3.4
+
+Question: Is there a relationship between the age of a plane and its delays?
+
+
+Join flights and planes data sets to create a dataframe with information on
+plane metadata and delays:
+
+```{r}
+planes <- nycflights13::planes
+head(planes)
+
+head(flights)
+
+flights_planes_join <- 
+  left_join(flights,
+          planes,
+          by = "tailnum")
+
+head(flights_planes_join)
+```
+
+
+Plot the relationship between the plane's manufacturing year and arrival and
+departure delays:
+
+
+```{r}
+flight_planes_join_avg_delays <-
+  flights_planes_join %>%
+  group_by(year.y) %>%
+  summarise(avg_arr_delay = mean(arr_delay, 
+                                 na.rm = TRUE),
+            avg_dep_delay = mean(dep_delay, 
+                                 na.rm = TRUE),
+            n_planes = n()) %>%
+  filter(year.y != "NA")
+
+flight_planes_join_avg_delays
+
+
+
+ggplot(data = flight_planes_join_avg_delays,
+       mapping = aes(y = avg_arr_delay,
+                     x = avg_dep_delay)) +
+  geom_point(aes(color = year.y,
+                 size = n_planes)) +
+  scale_color_continuous(type = "viridis") + 
+  labs(title = "Average Delays Unaffected by Plane Age",
+       x = "Average Departure Delay",
+       y = "Average Arrival Delay",
+       size = "Number of Planes",
+       color = "Year Manufactured")
+
+```
+
+There does not appear to be a relationship between plane age and delays.
+There is, as  expected a clear positive relationship between departure and
+arrival delays. There is also a greater number of planes that have been 
+manufactured more recently than there are older planes in the dataset. 
+However, all the planes, regardless of manufacturing year, are grouped in 
+the same area of the plot. If anything, the newer planes may have slightly 
+higher average delays, but that is likely skewed by there simply being more
+newer planes than older planes. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
